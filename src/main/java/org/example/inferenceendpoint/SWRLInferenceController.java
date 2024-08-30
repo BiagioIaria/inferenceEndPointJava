@@ -12,6 +12,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.*;
 import org.semanticweb.HermiT.ReasonerFactory;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,8 +24,9 @@ import java.util.Set;
 @RequestMapping("/api/inference")
 public class SWRLInferenceController {
 
-    private static final String GRAPHDB_ENDPOINT = "http://localhost:7200/repositories/test";
+    private static final String GRAPHDB_ENDPOINT = "http://localhost:7200/repositories/emoStory";
 
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/run")
     public String runInference() {
         try {
@@ -72,6 +74,7 @@ public class SWRLInferenceController {
             return "Errore durante l'esecuzione delle inferenze: " + e.getMessage();
         }
     }
+
 
     private void removeProblematicAxioms(OWLOntologyManager manager, OWLOntology ontology) {
         OWLDataFactory dataFactory = manager.getOWLDataFactory();
