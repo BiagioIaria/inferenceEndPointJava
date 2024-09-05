@@ -65,10 +65,31 @@ public class SWRLInferenceController {
             // Chiudi il reasoner
             reasoner.dispose();
 
-            // 2. Carica un file RDF in GraphDB
-            loadRDFToGraphDB(GRAPHDB_ENDPOINT, "inferred_ontology.rdf");
+            // 3. Carica il modello RDF in Apache Jena
+            Model model = ModelFactory.createDefaultModel();
+            model.read("inferred_ontology.rdf");
 
-            return "Inferenze completate e RDF caricato in GraphDB";
+            // 4. Esegui una query SPARQL per ottenere gli individuals di tipo Agent
+            String sparqlQueryString = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                    "PREFIX : <http://www.purl.org/drammar#>\n" +
+                    "\n" +
+                    "SELECT (STRAFTER(STR(?individuo), \"#\") AS ?i) ?emo\n" +
+                    "WHERE {\n" +
+                    "  ?individuo rdf:type :Agent .\n" +
+                    "  ?individuo :feels ?emo .\n" +
+                    "}";
+
+            Query query = QueryFactory.create(sparqlQueryString);
+            try (QueryExecution qexec = QueryExecutionFactory.create(query, model)) {
+                ResultSet results = qexec.execSelect();
+
+                // 5. Converti i risultati della query in JSON
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                ResultSetFormatter.outputAsJSON(outputStream, results);
+
+                return outputStream.toString("UTF-8");
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             return "Errore durante l'esecuzione delle inferenze: " + e.getMessage();
