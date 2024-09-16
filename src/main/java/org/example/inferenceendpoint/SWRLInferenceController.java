@@ -1,5 +1,6 @@
 package org.example.inferenceendpoint;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
@@ -26,7 +27,7 @@ public class SWRLInferenceController {
 
     private static final String GRAPHDB_ENDPOINT = "http://localhost:7200/repositories/emoStory";
 
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = {"http://emostory.altervista.org", "http://localhost:3000", "https://emostory.altervista.org"})
     @GetMapping("/run")
     public String runInference() {
         try {
@@ -96,6 +97,32 @@ public class SWRLInferenceController {
         }
     }
 
+    @CrossOrigin(origins = {"http://emostory.altervista.org", "http://localhost:3000", "https://emostory.altervista.org"})
+    @GetMapping("/export")
+    public void exportRDF(HttpServletResponse response) {
+        try {
+            // Esporta tutte le triple da GraphDB in un file RDF
+            String fileName = "exported.rdf";
+            exportTriplesToFile(GRAPHDB_ENDPOINT, fileName);
+
+            // Imposta le intestazioni della risposta HTTP
+            response.setContentType("application/rdf+xml");
+            response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+
+            // Scrivi il contenuto del file RDF nella risposta HTTP
+            try (InputStream inputStream = new FileInputStream(fileName);
+                 OutputStream outputStream = response.getOutputStream()) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     private void removeProblematicAxioms(OWLOntologyManager manager, OWLOntology ontology) {
         OWLDataFactory dataFactory = manager.getOWLDataFactory();
